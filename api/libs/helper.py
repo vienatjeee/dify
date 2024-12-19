@@ -8,17 +8,20 @@ import time
 import uuid
 from collections.abc import Generator
 from datetime import datetime
+from datetime import timezone as tz
 from hashlib import sha256
 from typing import Any, Optional, Union
 from zoneinfo import available_timezones
 
-from flask import Response, current_app, stream_with_context
-from flask_restful import fields
-
 from core.app.features.rate_limiting.rate_limit import RateLimitGenerator
 from core.file.upload_file_parser import UploadFileParser
 from extensions.ext_redis import redis_client
+from flask import Response, current_app, stream_with_context
+from flask_restful import fields
 from models.account import Account
+
+from api.configs import dify_config
+from api.services.errors.account import RateLimitExceededError
 
 
 def run(script):
@@ -270,3 +273,65 @@ class RateLimiter:
 
         redis_client.zadd(key, {current_time: current_time})
         redis_client.expire(key, self.time_window * 2)
+
+
+def get_current_datetime():
+    return datetime.now(tz.utc).replace(tzinfo=None)
+
+
+class VerificationCodeManager:
+    @classmethod
+    def generate_verification_code(cls, account: Account, code_type: str) -> str:
+        # Check if this key is still in cooldown period
+        now = int(time.time())
+        created_at = cls._get_verification_code_created_at(code_type, account.id)
+        if created_at is not None and now - created_at < dify_config.VERIFICATION_CODE_COOLDOWN_MINUTES * 60:
+            raise RateLimitExceededError()
+        if created_at is not None:
+            cls._revoke_verification_code(code_type, account.id)
+
+        verification_code = generate_string(dify_config.VERIFICATION_CODE_LENGTH)
+        cls._set_verification_code(code_type, account.id, verification_code, dify_config.VERIFICATION_CODE_EXPIRY_MINUTES)
+
+        return verification_code
+
+    @classmethod
+    def verify_verification_code(cls, account: Account, code_type: str, verification_code: str) -> bool:
+        key, _ = cls._get_key(code_type, account_id=account.id)
+        stored_verification_code = redis_client.get(key)
+
+        if stored_verification_code is None:
+            return False
+        return stored_verification_code == verification_code
+
+    @classmethod
+    def _set_verification_code(cls, code_type: str, account_id: str, verification_code: str, expire_minutes: int) -> None:
+        key, time_key = cls._get_key(code_type, account_id)
+        now = int(time.time())
+
+        redis_client.setex(key, expire_minutes * 60, verification_code)
+        redis_client.setex(time_key, expire_minutes * 60, now)
+
+    @classmethod
+    def _get_verification_code(cls, code_type: str, account_id: str) -> Optional[str]:
+        key, _ = cls._get_key(code_type, account_id)
+        verification_code = redis_client.get(key)
+
+        return verification_code
+
+    @classmethod
+    def _get_verification_code_created_at(cls, code_type: str, account_id: str) -> Optional[int]:
+        _, time_key = cls._get_key(code_type, account_id)
+        created_at = redis_client.get(time_key)
+
+        return int(created_at) if created_at is not None else None
+
+    @classmethod
+    def _revoke_verification_code(cls, code_type: str, account_id: str) -> None:
+        key, time_key = cls._get_key(code_type, account_id)
+        redis_client.delete(key)
+        redis_client.delete(time_key)
+
+    @classmethod
+    def _get_key(cls, code_type: str, account_id: str) -> tuple[str, str]:
+        return f"verification:{code_type}:{account_id}", f"verification:{code_type}:{account_id}:time"

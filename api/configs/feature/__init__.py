@@ -1,9 +1,9 @@
 from typing import Annotated, Optional
 
-from pydantic import AliasChoices, Field, HttpUrl, NegativeInt, NonNegativeInt, PositiveInt, computed_field
-from pydantic_settings import BaseSettings
-
 from configs.feature.hosted_service import HostedServiceConfig
+from pydantic import (AliasChoices, Field, HttpUrl, NegativeInt,
+                      NonNegativeInt, PositiveInt, computed_field)
+from pydantic_settings import BaseSettings
 
 
 class SecurityConfig(BaseSettings):
@@ -598,6 +598,23 @@ class PositionConfig(BaseSettings):
         return {item.strip() for item in self.POSITION_TOOL_EXCLUDES.split(",") if item.strip() != ""}
 
 
+class VerificationConfig(BaseSettings):
+    VERIFICATION_CODE_EXPIRY_MINUTES: PositiveInt = Field(
+        description="Duration in minutes for which a verification code remains valid",
+        default=5,
+    )
+
+    VERIFICATION_CODE_LENGTH: PositiveInt = Field(
+        description="Length of the verification code",
+        default=6,
+    )
+
+    VERIFICATION_CODE_COOLDOWN_MINUTES: PositiveInt = Field(
+        description="Cooldown time in minutes between verification code generation",
+        default=1,
+    )
+
+
 class FeatureConfig(
     # place the configs in alphabet order
     AppExecutionConfig,
@@ -623,6 +640,7 @@ class FeatureConfig(
     WorkflowConfig,
     WorkspaceConfig,
     PositionConfig,
+    VerificationConfig,
     # hosted services config
     HostedServiceConfig,
     CeleryBeatConfig,
