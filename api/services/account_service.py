@@ -33,6 +33,7 @@ from tasks.mail_invite_member_task import send_invite_member_mail_task
 from tasks.mail_reset_password_task import send_reset_password_mail_task
 from werkzeug.exceptions import Unauthorized
 
+from api.services.account_deletion_log_service import AccountDeletionLogService
 from api.tasks.delete_account_task import delete_account_task
 from api.tasks.mail_account_deletion_task import \
     send_account_deletion_verification_code
@@ -130,6 +131,10 @@ class AccountService:
         email: str, name: str, interface_language: str, password: Optional[str] = None, interface_theme: str = "light"
     ) -> Account:
         """create account"""
+        # check if the email is in freeze period
+        if AccountDeletionLogService.email_in_freeze(email):
+            raise AccountRegisterError("Account is in freeze period.")
+
         account = Account()
         account.email = email
         account.name = name

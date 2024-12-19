@@ -615,6 +615,13 @@ class VerificationConfig(BaseSettings):
     )
 
 
+class AccountConfig(BaseSettings):
+    ACCOUNT_REGISTER_COOLDOWN_DAYS: PositiveInt = Field(
+        description="Cooldown time in days for re-registering an account",
+        default=30,
+    )
+
+
 class FeatureConfig(
     # place the configs in alphabet order
     AppExecutionConfig,
@@ -641,6 +648,7 @@ class FeatureConfig(
     WorkspaceConfig,
     PositionConfig,
     VerificationConfig,
+    AccountConfig,
     # hosted services config
     HostedServiceConfig,
     CeleryBeatConfig,

@@ -5,9 +5,9 @@ import click
 from celery import shared_task
 from extensions.ext_database import db
 
-from api.libs.helper import get_current_datetime
-from api.models.account import (Account, AccountDeletionLog, Tenant,
-                                TenantAccountJoin, TenantAccountJoinRole)
+from api.models.account import (Account, Tenant, TenantAccountJoin,
+                                TenantAccountJoinRole)
+from api.services.account_deletion_log_service import AccountDeletionLogService
 from api.services.billing_service import BillingService
 from api.tasks.mail_account_deletion_task import (send_deletion_fail_task,
                                                   send_deletion_success_task)
@@ -51,10 +51,7 @@ def delete_account_task(account: Account, reason: str):
             db.session.delete(account)
 
             # prepare account deletion log
-            account_deletion_log = AccountDeletionLog(account_id=account.id)
-            account_deletion_log.email = account.email
-            account_deletion_log.reason = reason
-            account_deletion_log.updated_at = get_current_datetime()
+            account_deletion_log = AccountDeletionLogService.create_account_deletion_log(account.email, reason)
             db.session.add(account_deletion_log)
 
     except Exception as e:
