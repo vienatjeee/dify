@@ -417,7 +417,7 @@ const StepTwo = ({
         },
         indexing_technique: getIndexing_technique(),
         process_rule: getProcessRule(),
-        doc_form: docForm,
+        doc_form: currentDataset ? currentDataset.doc_form : docForm,
         doc_language: docLanguage,
 
         retrieval_model: postRetrievalConfig,
@@ -1003,7 +1003,8 @@ const StepTwo = ({
                     setPreviewFile(selected)
                     currentEstimateMutation.mutate()
                   }}
-                  value={previewFile}
+                  // when it is from setting, it just has one file
+                  value={isSetting ? (files[0]! as Required<CustomFile>) : previewFile}
                 />
               }
               {dataSourceType === DataSourceType.NOTION
