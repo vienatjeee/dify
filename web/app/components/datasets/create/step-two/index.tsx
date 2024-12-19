@@ -215,9 +215,10 @@ const StepTwo = ({
   const [parentChildConfig, setParentChildConfig] = useState<ParentChildConfig>(defaultParentChildConfig)
 
   const getIndexing_technique = () => indexingType || indexType
+  const currentDocForm = currentDataset ? currentDataset.doc_form : docForm
 
   const getProcessRule = (): ProcessRule => {
-    if (docForm === ChuckingMode.parentChild) {
+    if (currentDocForm === ChuckingMode.parentChild) {
       return {
         rules: {
           pre_processing_rules: rules,
@@ -232,7 +233,7 @@ const StepTwo = ({
             separator: unescape(parentChildConfig.child.delimiter),
             max_tokens: parentChildConfig.child.maxLength,
           },
-        }, // api will check this. It will be removed after api refactored.
+        },
         mode: 'hierarchical',
       } as ProcessRule
     }
@@ -250,7 +251,7 @@ const StepTwo = ({
   }
 
   const fileIndexingEstimateQuery = useFetchFileIndexingEstimateForFile({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.FILE,
     files: previewFile
@@ -261,7 +262,7 @@ const StepTwo = ({
     dataset_id: datasetId!,
   })
   const notionIndexingEstimateQuery = useFetchFileIndexingEstimateForNotion({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.NOTION,
     notionPages: [previewNotionPage],
@@ -271,7 +272,7 @@ const StepTwo = ({
   })
 
   const websiteIndexingEstimateQuery = useFetchFileIndexingEstimateForWeb({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.WEB,
     websitePages: [previewWebsitePage],
@@ -588,9 +589,7 @@ const StepTwo = ({
             activeHeaderClassName='bg-dataset-option-card-blue-gradient'
             description={t('datasetCreation.stepTwo.generalTip')}
             isActive={
-              [ChuckingMode.text, ChuckingMode.qa].includes(
-                datasetId ? currentDataset!.doc_form : docForm,
-              )
+              [ChuckingMode.text, ChuckingMode.qa].includes(currentDocForm)
             }
             onSwitched={() =>
               handleChangeDocform(ChuckingMode.text)
@@ -713,64 +712,68 @@ const StepTwo = ({
             noHighlight={Boolean(datasetId)}
           >
             <div className='flex flex-col gap-4'>
-              {!datasetId && <div>
+              <div>
                 <div className='flex items-center gap-x-2'>
                   <div className='inline-flex shrink-0'>
                     <TextLabel>{t('datasetCreation.stepTwo.parentChunkForContext')}</TextLabel>
                   </div>
                   <Divider className='grow' bgStyle='gradient' />
                 </div>
-                <RadioCard className='mt-1'
-                  icon={<Image src={Note} alt='' />}
-                  title={t('datasetCreation.stepTwo.paragraph')}
-                  description={t('datasetCreation.stepTwo.paragraphTip')}
-                  isChosen={parentChildConfig.chunkForContext === 'paragraph'}
-                  onChosen={() => setParentChildConfig(
-                    {
-                      ...parentChildConfig,
-                      chunkForContext: 'paragraph',
-                    },
-                  )}
-                  chosenConfig={
-                    <div className='flex gap-3'>
-                      <DelimiterInput
-                        value={parentChildConfig.parent.delimiter}
-                        tooltip={t('datasetCreation.stepTwo.parentChildDelimiterTip')!}
-                        onChange={e => setParentChildConfig({
-                          ...parentChildConfig,
-                          parent: {
-                            ...parentChildConfig.parent,
-                            delimiter: e.target.value ? escape(e.target.value) : '',
-                          },
-                        })}
-                      />
-                      <MaxLengthInput
-                        unit='tokens'
-                        value={parentChildConfig.parent.maxLength}
-                        onChange={value => setParentChildConfig({
-                          ...parentChildConfig,
-                          parent: {
-                            ...parentChildConfig.parent,
-                            maxLength: value,
-                          },
-                        })}
-                      />
-                    </div>
-                  }
-                />
-                <RadioCard className='mt-2'
-                  icon={<Image src={FileList} alt='' />}
-                  title={t('datasetCreation.stepTwo.fullDoc')}
-                  description={t('datasetCreation.stepTwo.fullDocTip')}
-                  onChosen={() => setParentChildConfig(
-                    {
-                      ...parentChildConfig,
-                      chunkForContext: 'full-doc',
-                    },
-                  )}
-                  isChosen={parentChildConfig.chunkForContext === 'full-doc'}
-                />
-              </div>}
+                {
+                  !(datasetId && parentChildConfig.chunkForContext !== 'paragraph')
+                  && <RadioCard className='mt-1'
+                    icon={<Image src={Note} alt='' />}
+                    title={t('datasetCreation.stepTwo.paragraph')}
+                    description={t('datasetCreation.stepTwo.paragraphTip')}
+                    isChosen={parentChildConfig.chunkForContext === 'paragraph'}
+                    onChosen={() => setParentChildConfig(
+                      {
+                        ...parentChildConfig,
+                        chunkForContext: 'paragraph',
+                      },
+                    )}
+                    chosenConfig={
+                      <div className='flex gap-3'>
+                        <DelimiterInput
+                          value={parentChildConfig.parent.delimiter}
+                          tooltip={t('datasetCreation.stepTwo.parentChildDelimiterTip')!}
+                          onChange={e => setParentChildConfig({
+                            ...parentChildConfig,
+                            parent: {
+                              ...parentChildConfig.parent,
+                              delimiter: e.target.value ? escape(e.target.value) : '',
+                            },
+                          })}
+                        />
+                        <MaxLengthInput
+                          unit='tokens'
+                          value={parentChildConfig.parent.maxLength}
+                          onChange={value => setParentChildConfig({
+                            ...parentChildConfig,
+                            parent: {
+                              ...parentChildConfig.parent,
+                              maxLength: value,
+                            },
+                          })}
+                        />
+                      </div>
+                    }
+                  />}
+                {
+                  !(datasetId && parentChildConfig.chunkForContext !== 'full-doc')
+                  && <RadioCard className='mt-2'
+                    icon={<Image src={FileList} alt='' />}
+                    title={t('datasetCreation.stepTwo.fullDoc')}
+                    description={t('datasetCreation.stepTwo.fullDocTip')}
+                    onChosen={() => setParentChildConfig(
+                      {
+                        ...parentChildConfig,
+                        chunkForContext: 'full-doc',
+                      },
+                    )}
+                    isChosen={parentChildConfig.chunkForContext === 'full-doc'}
+                  />}
+              </div>
 
               <div>
                 <div className='flex items-center gap-x-2'>
@@ -1062,12 +1065,12 @@ const StepTwo = ({
           className={cn('flex shrink-0 w-1/2 p-4 pr-0 relative h-full', isMobile && 'w-full max-w-[524px]')}
           mainClassName='space-y-6'
         >
-          {docForm === ChuckingMode.qa && estimate?.qa_preview && (
+          {currentDocForm === ChuckingMode.qa && estimate?.qa_preview && (
             estimate?.qa_preview.map(item => (
               <QAPreview key={item.question} qa={item} />
             ))
           )}
-          {docForm === ChuckingMode.text && estimate?.preview && (
+          {currentDocForm === ChuckingMode.text && estimate?.preview && (
             estimate?.preview.map((item, index) => (
               <ChunkContainer
                 key={item.content}
@@ -1078,7 +1081,7 @@ const StepTwo = ({
               </ChunkContainer>
             ))
           )}
-          {docForm === ChuckingMode.parentChild && currentEstimateMutation.data?.preview && (
+          {currentDocForm === ChuckingMode.parentChild && currentEstimateMutation.data?.preview && (
             estimate?.preview?.map((item, index) => {
               const indexForLabel = index + 1
               return (
