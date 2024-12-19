@@ -122,7 +122,7 @@ const translation = {
     removeExtraSpaces: 'Replace consecutive spaces, newlines and tabs',
     removeUrlEmails: 'Delete all URLs and email addresses',
     removeStopwords: 'Remove stopwords such as "a", "an", "the"',
-    preview: 'Confirm & Preview',
+    preview: 'Preview',
     previewChunk: 'Preview Chunk',
     reset: 'Reset',
     indexMode: 'Index mode',
@@ -173,6 +173,8 @@ const translation = {
     qaSwitchHighQualityTipContent: 'Currently, only high-quality index method supports Q&A format chunking. Would you like to switch to high-quality mode?',
     notAvailableForParentChild: 'Not available for Parent-child Index',
     notAvailableForQA: 'Not available for Q&A Index',
+    parentChildDelimiterTip: 'A delimiter is the character used to separate text. \\n\\n is recommended for splitting the original document into large parent chunks. You can also use special delimiters defined by yourself.',
+    parentChildChunkDelimiterTip: 'A delimiter is the character used to separate text. \\n is recommended for splitting parent chunks into small child chunks. You can also use special delimiters defined by yourself.',
   },
   stepThree: {
     creationTitle: '🎉 Knowledge created',

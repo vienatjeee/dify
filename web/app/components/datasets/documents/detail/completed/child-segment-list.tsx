@@ -92,10 +92,17 @@ const ChildSegmentList: FC<IChildSegmentCardProps> = ({
     )}>
       {isFullDocMode ? <Divider type='horizontal' className='h-[1px] bg-divider-subtle my-1' /> : null}
       <div className={classNames('flex items-center justify-between', isFullDocMode ? 'pt-2 pb-3 sticky -top-2 left-0 bg-components-panel-bg' : '')}>
-        <div className={classNames('h-7 flex items-center pl-1 pr-3 rounded-lg', (isParagraphMode && collapsed) && 'bg-dataset-child-chunk-expand-btn-bg', isFullDocMode && 'pl-0')} onClick={(event) => {
+        <div className={classNames(
+          'h-7 flex items-center pl-1 pr-3 rounded-lg',
+          isParagraphMode && 'cursor-pointer',
+          (isParagraphMode && collapsed) && 'bg-dataset-child-chunk-expand-btn-bg',
+          isFullDocMode && 'pl-0',
+        )}
+        onClick={(event) => {
           event.stopPropagation()
           toggleCollapse()
-        }}>
+        }}
+        >
           {
             isParagraphMode
               ? collapsed
@@ -137,7 +144,7 @@ const ChildSegmentList: FC<IChildSegmentCardProps> = ({
       {((isFullDocMode && !isLoading) || !collapsed)
         ? <div className={classNames('flex items-center gap-x-0.5', isFullDocMode ? 'grow mb-6' : '')}>
           {isParagraphMode && (
-            <div className='self-stretch my-0.5'>
+            <div className='self-stretch'>
               <Divider type='vertical' className='w-[2px] mx-[7px] bg-text-accent-secondary' />
             </div>
           )}
@@ -150,9 +157,9 @@ const ChildSegmentList: FC<IChildSegmentCardProps> = ({
                   label={`C-${childChunk.position}${edited ? ` · ${t('datasetDocuments.segment.edited')}` : ''}`}
                   text={childChunk.content}
                   onDelete={() => onDelete?.(childChunk.segment_id, childChunk.id)}
-                  className='line-clamp-3'
-                  labelClassName='font-semibold'
-                  contentClassName={'!leading-6'}
+                  labelInnerClassName='text-[10px] font-semibold align-bottom leading-6'
+                  contentClassName='!leading-6'
+                  showDivider={false}
                   onClick={(e) => {
                     e.stopPropagation()
                     onClickSlice?.(childChunk)

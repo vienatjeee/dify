@@ -57,7 +57,7 @@ import { IS_CE_EDITION } from '@/config'
 import Divider from '@/app/components/base/divider'
 import { getNotionInfo, getWebsiteInfo, useCreateDocument, useCreateFirstDocument, useFetchDefaultProcessRule, useFetchFileIndexingEstimateForFile, useFetchFileIndexingEstimateForNotion, useFetchFileIndexingEstimateForWeb } from '@/service/knowledge/use-create-dataset'
 import Badge from '@/app/components/base/badge'
-import { SkeletonContanier, SkeletonPoint, SkeletonRectangle, SkeletonRow } from '@/app/components/base/skeleton'
+import { SkeletonContainer, SkeletonPoint, SkeletonRectangle, SkeletonRow } from '@/app/components/base/skeleton'
 import Tooltip from '@/app/components/base/tooltip'
 import CustomDialog from '@/app/components/base/dialog'
 import { PortalToFollowElem, PortalToFollowElemContent, PortalToFollowElemTrigger } from '@/app/components/base/portal-to-follow-elem'
@@ -215,9 +215,10 @@ const StepTwo = ({
   const [parentChildConfig, setParentChildConfig] = useState<ParentChildConfig>(defaultParentChildConfig)
 
   const getIndexing_technique = () => indexingType || indexType
+  const currentDocForm = currentDataset ? currentDataset.doc_form : docForm
 
   const getProcessRule = (): ProcessRule => {
-    if (docForm === ChuckingMode.parentChild) {
+    if (currentDocForm === ChuckingMode.parentChild) {
       return {
         rules: {
           pre_processing_rules: rules,
@@ -232,7 +233,7 @@ const StepTwo = ({
             separator: unescape(parentChildConfig.child.delimiter),
             max_tokens: parentChildConfig.child.maxLength,
           },
-        }, // api will check this. It will be removed after api refactored.
+        },
         mode: 'hierarchical',
       } as ProcessRule
     }
@@ -250,7 +251,7 @@ const StepTwo = ({
   }
 
   const fileIndexingEstimateQuery = useFetchFileIndexingEstimateForFile({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.FILE,
     files: previewFile
@@ -261,7 +262,7 @@ const StepTwo = ({
     dataset_id: datasetId!,
   })
   const notionIndexingEstimateQuery = useFetchFileIndexingEstimateForNotion({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.NOTION,
     notionPages: [previewNotionPage],
@@ -271,7 +272,7 @@ const StepTwo = ({
   })
 
   const websiteIndexingEstimateQuery = useFetchFileIndexingEstimateForWeb({
-    docForm,
+    docForm: currentDocForm,
     docLanguage,
     dataSourceType: DataSourceType.WEB,
     websitePages: [previewWebsitePage],
@@ -417,7 +418,7 @@ const StepTwo = ({
         },
         indexing_technique: getIndexing_technique(),
         process_rule: getProcessRule(),
-        doc_form: docForm,
+        doc_form: currentDataset ? currentDataset.doc_form : docForm,
         doc_language: docLanguage,
 
         retrieval_model: postRetrievalConfig,
@@ -577,7 +578,7 @@ const StepTwo = ({
   const isHoveringEconomy = useHover(economyDomRef)
 
   return (
-    <div className='flex w-full max-h-full h-full'>
+    <div className='flex w-full h-full'>
       <div className={cn('relative h-full w-1/2 py-6 overflow-y-auto', isMobile ? 'px-4' : 'px-12')}>
         <div className={'system-md-semibold mb-1'}>{t('datasetCreation.stepTwo.segmentation')}</div>
         {(!datasetId || [ChuckingMode.text, ChuckingMode.qa].includes(currentDataset!.doc_form))
@@ -588,9 +589,7 @@ const StepTwo = ({
             activeHeaderClassName='bg-dataset-option-card-blue-gradient'
             description={t('datasetCreation.stepTwo.generalTip')}
             isActive={
-              [ChuckingMode.text, ChuckingMode.qa].includes(
-                datasetId ? currentDataset!.doc_form : docForm,
-              )
+              [ChuckingMode.text, ChuckingMode.qa].includes(currentDocForm)
             }
             onSwitched={() =>
               handleChangeDocform(ChuckingMode.text)
@@ -615,10 +614,12 @@ const StepTwo = ({
                   onChange={e => setSegmentIdentifier(e.target.value, true)}
                 />
                 <MaxLengthInput
+                  unit='tokens'
                   value={maxChunkLength}
                   onChange={setMaxChunkLength}
                 />
                 <OverlapInput
+                  unit='tokens'
                   value={overlap}
                   min={1}
                   onChange={setOverlap}
@@ -718,54 +719,60 @@ const StepTwo = ({
                   </div>
                   <Divider className='grow' bgStyle='gradient' />
                 </div>
-                <RadioCard className='mt-1'
-                  icon={<Image src={Note} alt='' />}
-                  title={t('datasetCreation.stepTwo.paragraph')}
-                  description={t('datasetCreation.stepTwo.paragraphTip')}
-                  isChosen={parentChildConfig.chunkForContext === 'paragraph'}
-                  onChosen={() => setParentChildConfig(
-                    {
-                      ...parentChildConfig,
-                      chunkForContext: 'paragraph',
-                    },
-                  )}
-                  chosenConfig={
-                    <div className='flex gap-3'>
-                      <DelimiterInput
-                        value={parentChildConfig.parent.delimiter}
-                        onChange={e => setParentChildConfig({
-                          ...parentChildConfig,
-                          parent: {
-                            ...parentChildConfig.parent,
-                            delimiter: e.target.value ? escape(e.target.value) : '',
-                          },
-                        })}
-                      />
-                      <MaxLengthInput
-                        value={parentChildConfig.parent.maxLength}
-                        onChange={value => setParentChildConfig({
-                          ...parentChildConfig,
-                          parent: {
-                            ...parentChildConfig.parent,
-                            maxLength: value,
-                          },
-                        })}
-                      />
-                    </div>
-                  }
-                />
-                <RadioCard className='mt-2'
-                  icon={<Image src={FileList} alt='' />}
-                  title={t('datasetCreation.stepTwo.fullDoc')}
-                  description={t('datasetCreation.stepTwo.fullDocTip')}
-                  onChosen={() => setParentChildConfig(
-                    {
-                      ...parentChildConfig,
-                      chunkForContext: 'full-doc',
-                    },
-                  )}
-                  isChosen={parentChildConfig.chunkForContext === 'full-doc'}
-                />
+                {
+                  !(datasetId && parentChildConfig.chunkForContext !== 'paragraph')
+                  && <RadioCard className='mt-1'
+                    icon={<Image src={Note} alt='' />}
+                    title={t('datasetCreation.stepTwo.paragraph')}
+                    description={t('datasetCreation.stepTwo.paragraphTip')}
+                    isChosen={parentChildConfig.chunkForContext === 'paragraph'}
+                    onChosen={() => setParentChildConfig(
+                      {
+                        ...parentChildConfig,
+                        chunkForContext: 'paragraph',
+                      },
+                    )}
+                    chosenConfig={
+                      <div className='flex gap-3'>
+                        <DelimiterInput
+                          value={parentChildConfig.parent.delimiter}
+                          tooltip={t('datasetCreation.stepTwo.parentChildDelimiterTip')!}
+                          onChange={e => setParentChildConfig({
+                            ...parentChildConfig,
+                            parent: {
+                              ...parentChildConfig.parent,
+                              delimiter: e.target.value ? escape(e.target.value) : '',
+                            },
+                          })}
+                        />
+                        <MaxLengthInput
+                          unit='tokens'
+                          value={parentChildConfig.parent.maxLength}
+                          onChange={value => setParentChildConfig({
+                            ...parentChildConfig,
+                            parent: {
+                              ...parentChildConfig.parent,
+                              maxLength: value,
+                            },
+                          })}
+                        />
+                      </div>
+                    }
+                  />}
+                {
+                  !(datasetId && parentChildConfig.chunkForContext !== 'full-doc')
+                  && <RadioCard className='mt-2'
+                    icon={<Image src={FileList} alt='' />}
+                    title={t('datasetCreation.stepTwo.fullDoc')}
+                    description={t('datasetCreation.stepTwo.fullDocTip')}
+                    onChosen={() => setParentChildConfig(
+                      {
+                        ...parentChildConfig,
+                        chunkForContext: 'full-doc',
+                      },
+                    )}
+                    isChosen={parentChildConfig.chunkForContext === 'full-doc'}
+                  />}
               </div>
 
               <div>
@@ -778,6 +785,7 @@ const StepTwo = ({
                 <div className='flex gap-3 mt-1'>
                   <DelimiterInput
                     value={parentChildConfig.child.delimiter}
+                    tooltip={t('datasetCreation.stepTwo.parentChildChunkDelimiterTip')!}
                     onChange={e => setParentChildConfig({
                       ...parentChildConfig,
                       child: {
@@ -787,6 +795,7 @@ const StepTwo = ({
                     })}
                   />
                   <MaxLengthInput
+                    unit='tokens'
                     value={parentChildConfig.child.maxLength}
                     onChange={value => setParentChildConfig({
                       ...parentChildConfig,
@@ -825,14 +834,14 @@ const StepTwo = ({
         <div className='flex items-center gap-2 flex-wrap sm:flex-nowrap'>
           {(!hasSetIndexType || (hasSetIndexType && indexingType === IndexingType.QUALIFIED)) && (
             <OptionCard
-              title={<p className='flex items-center'>
+              title={<div className='flex items-center'>
                 {t('datasetCreation.stepTwo.qualified')}
                 {!hasSetIndexType
                   && <Badge className={cn('ml-1 h-[18px]', (!hasSetIndexType && indexType === IndexingType.QUALIFIED) ? 'border-text-accent-secondary text-text-accent-secondary' : '')} uppercase>{t('datasetCreation.stepTwo.recommend')}</Badge>}
                 <span className='ml-auto'>
                   {!hasSetIndexType && <span className={cn(s.radio)} />}
                 </span>
-              </p>}
+              </div>}
               description={t('datasetCreation.stepTwo.qualifiedTip')}
               icon={<Image src={indexMethodIcon.high_quality} alt='' />}
               isActive={!hasSetIndexType && indexType === IndexingType.QUALIFIED}
@@ -986,9 +995,9 @@ const StepTwo = ({
       <FloatRightContainer isMobile={isMobile} isOpen={true} onClose={() => { }} footer={null}>
         <PreviewContainer
           header={<PreviewHeader
-            title='Preview'
+            title={t('datasetCreation.stepTwo.preview')}
           >
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-1'>
               {dataSourceType === DataSourceType.FILE
                 && <PreviewDocumentPicker
                   files={files as Array<Required<CustomFile>>}
@@ -997,7 +1006,8 @@ const StepTwo = ({
                     setPreviewFile(selected)
                     currentEstimateMutation.mutate()
                   }}
-                  value={previewFile}
+                  // when it is from setting, it just has one file
+                  value={isSetting ? (files[0]! as Required<CustomFile>) : previewFile}
                 />
               }
               {dataSourceType === DataSourceType.NOTION
@@ -1048,19 +1058,19 @@ const StepTwo = ({
               }
               <Badge text={t(
                 'datasetCreation.stepTwo.previewChunkCount', {
-                  count: estimate?.preview.length || estimate?.qa_preview?.length || 0,
+                  count: estimate?.total_segments || 0,
                 }) as string} />
             </div>
           </PreviewHeader>}
-          className={cn('flex shrink-0 w-1/2 relative h-full overflow-y-scroll', isMobile && 'w-full max-w-[524px]')}
+          className={cn('flex shrink-0 w-1/2 p-4 pr-0 relative h-full', isMobile && 'w-full max-w-[524px]')}
           mainClassName='space-y-6'
         >
-          {docForm === ChuckingMode.qa && estimate?.qa_preview && (
+          {currentDocForm === ChuckingMode.qa && estimate?.qa_preview && (
             estimate?.qa_preview.map(item => (
               <QAPreview key={item.question} qa={item} />
             ))
           )}
-          {docForm === ChuckingMode.text && estimate?.preview && (
+          {currentDocForm === ChuckingMode.text && estimate?.preview && (
             estimate?.preview.map((item, index) => (
               <ChunkContainer
                 key={item.content}
@@ -1071,7 +1081,7 @@ const StepTwo = ({
               </ChunkContainer>
             ))
           )}
-          {docForm === ChuckingMode.parentChild && currentEstimateMutation.data?.preview && (
+          {currentDocForm === ChuckingMode.parentChild && currentEstimateMutation.data?.preview && (
             estimate?.preview?.map((item, index) => {
               const indexForLabel = index + 1
               return (
@@ -1089,6 +1099,7 @@ const StepTwo = ({
                           label={`C-${indexForLabel}`}
                           text={child}
                           tooltip={`Child-chunk-${indexForLabel} · ${child.length} Characters`}
+                          labelInnerClassName='text-[10px] font-semibold align-bottom leading-7'
                         />
                       )
                     })}
@@ -1110,7 +1121,7 @@ const StepTwo = ({
           {currentEstimateMutation.isPending && (
             <div className='space-y-6'>
               {Array.from({ length: 10 }, (_, i) => (
-                <SkeletonContanier key={i}>
+                <SkeletonContainer key={i}>
                   <SkeletonRow>
                     <SkeletonRectangle className="w-20" />
                     <SkeletonPoint />
@@ -1119,7 +1130,7 @@ const StepTwo = ({
                   <SkeletonRectangle className="w-full" />
                   <SkeletonRectangle className="w-full" />
                   <SkeletonRectangle className="w-[422px]" />
-                </SkeletonContanier>
+                </SkeletonContainer>
               ))}
             </div>
           )}

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { FC, ReactNode } from 'react'
 import { FloatingFocusManager, autoUpdate, flip, shift, useDismiss, useFloating, useHover, useInteractions, useRole } from '@floating-ui/react'
 import { RiDeleteBinLine } from '@remixicon/react'
+// @ts-expect-error no types available
+import lineClamp from 'line-clamp'
 import type { SliceProps } from './type'
 import { SliceContainer, SliceContent, SliceDivider, SliceLabel } from './shared'
 import classNames from '@/utils/classnames'
@@ -10,12 +12,22 @@ import ActionButton, { ActionButtonState } from '@/app/components/base/action-bu
 type EditSliceProps = SliceProps<{
   label: ReactNode
   onDelete: () => void
-  labelClassName?: string
+  labelInnerClassName?: string
   contentClassName?: string
+  showDivider?: boolean
 }>
 
 export const EditSlice: FC<EditSliceProps> = (props) => {
-  const { label, className, text, onDelete, labelClassName, contentClassName, ...rest } = props
+  const {
+    label,
+    className,
+    text,
+    onDelete,
+    labelInnerClassName,
+    contentClassName,
+    showDivider = true,
+    ...rest
+  } = props
   const [delBtnShow, setDelBtnShow] = useState(false)
   const [isDelBtnHover, setDelBtnHover] = useState(false)
 
@@ -37,17 +49,21 @@ export const EditSlice: FC<EditSliceProps> = (props) => {
   const isDestructive = delBtnShow && isDelBtnHover
 
   return (
-    <div>
+    <span className='inline-block'>
       <SliceContainer {...rest}
-        className={className}
-        ref={refs.setReference}
+        className={classNames('block', className)}
+        ref={(ref) => {
+          refs.setReference(ref)
+          if (ref)
+            lineClamp(ref, 4)
+        }}
         {...getReferenceProps()}
       >
         <SliceLabel
           className={classNames(
             isDestructive && '!bg-state-destructive-solid !text-text-primary-on-surface',
-            labelClassName,
           )}
+          labelInnerClassName={labelInnerClassName}
         >
           {label}
         </SliceLabel>
@@ -59,11 +75,11 @@ export const EditSlice: FC<EditSliceProps> = (props) => {
         >
           {text}
         </SliceContent>
-        <SliceDivider
+        {showDivider && <SliceDivider
           className={classNames(
             isDestructive && '!bg-state-destructive-hover-alt',
           )}
-        />
+        />}
         {delBtnShow && <FloatingFocusManager
           context={context}
         >
@@ -88,6 +104,6 @@ export const EditSlice: FC<EditSliceProps> = (props) => {
           </div>
         </FloatingFocusManager>}
       </SliceContainer>
-    </div>
+    </span>
   )
 }
