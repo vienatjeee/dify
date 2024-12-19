@@ -19,7 +19,7 @@ class AccountDeletionLogService:
 
     @classmethod
     def email_in_freeze(cls, email):
-        log = db.session.query(AccountDeletionLog).filter(email=email).first()
+        log = db.session.query(AccountDeletionLog).filter(email=email).order_by(AccountDeletionLog.created_at.desc()).first()
         if not log:
             return False
         # check if the account is in freeze period
