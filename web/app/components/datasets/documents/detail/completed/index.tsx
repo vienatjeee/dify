@@ -24,7 +24,7 @@ import Input from '@/app/components/base/input'
 import { ToastContext } from '@/app/components/base/toast'
 import type { Item } from '@/app/components/base/select'
 import { SimpleSelect } from '@/app/components/base/select'
-import { type ChildChunkDetail, ChuckingMode, type SegmentDetailModel, type SegmentUpdater } from '@/models/datasets'
+import { type ChildChunkDetail, ChunkingMode, type SegmentDetailModel, type SegmentUpdater } from '@/models/datasets'
 import NewSegment from '@/app/components/datasets/documents/detail/new-segment'
 import { useEventEmitterContextContext } from '@/context/event-emitter'
 import Checkbox from '@/app/components/base/checkbox'
@@ -80,7 +80,11 @@ const Completed: FC<ICompletedProps> = ({
 }) => {
   const { t } = useTranslation()
   const { notify } = useContext(ToastContext)
-  const [datasetId = '', documentId = '', docForm, mode, parentMode] = useDocumentContext(s => [s.datasetId, s.documentId, s.docForm, s.mode, s.parentMode])
+  const datasetId = useDocumentContext(s => s.datasetId) || ''
+  const documentId = useDocumentContext(s => s.documentId) || ''
+  const docForm = useDocumentContext(s => s.docForm)
+  const mode = useDocumentContext(s => s.mode)
+  const parentMode = useDocumentContext(s => s.parentMode)
   // the current segment id and whether to show the modal
   const [currSegment, setCurrSegment] = useState<{ segInfo?: SegmentDetailModel; showModal: boolean; isEditMode?: boolean }>({ showModal: false })
   const [currChildChunk, setCurrChildChunk] = useState<{ childChunkInfo?: ChildChunkDetail; showModal: boolean }>({ showModal: false })
@@ -254,7 +258,7 @@ const Completed: FC<ICompletedProps> = ({
     needRegenerate = false,
   ) => {
     const params: SegmentUpdater = { content: '' }
-    if (docForm === ChuckingMode.qa) {
+    if (docForm === ChunkingMode.qa) {
       if (!question.trim())
         return notify({ type: 'error', message: t('datasetDocuments.segment.questionEmpty') })
       if (!answer.trim())
@@ -512,7 +516,7 @@ const Completed: FC<ICompletedProps> = ({
           onCheck={onSelectedAll}
           disabled={isLoadingSegmentList}
         />
-        <div className={cn('system-sm-semibold-uppercase pl-5', s.totalText)}>{totalText}</div>
+        <div className={'system-sm-semibold-uppercase pl-5 text-text-secondary flex-1'}>{totalText}</div>
         <SimpleSelect
           onSelect={onChangeStatus}
           items={[

@@ -64,7 +64,8 @@ const SegmentCard: FC<ISegmentCardProps> = ({
   } = detail as Required<ISegmentCardProps>['detail']
   const [showModal, setShowModal] = useState(false)
   const isCollapsed = useSegmentListContext(s => s.isCollapsed)
-  const [mode, parentMode] = useDocumentContext(s => [s.mode, s.parentMode])
+  const mode = useDocumentContext(s => s.mode)
+  const parentMode = useDocumentContext(s => s.parentMode)
 
   const isGeneralMode = useMemo(() => {
     return mode === 'custom'
@@ -142,7 +143,7 @@ const SegmentCard: FC<ISegmentCardProps> = ({
       <div className='h-5 relative flex items-center justify-between'>
         <>
           <div className='flex items-center gap-x-2'>
-            <SegmentIndexTag positionId={position} className={textOpacity} labelPrefix={labelPrefix} />
+            <SegmentIndexTag positionId={position} className={textOpacity} label={isFullDocMode ? labelPrefix : ''} labelPrefix={labelPrefix} />
             <Dot />
             <div className={cn('text-text-tertiary system-xs-medium', textOpacity)}>{wordCountText}</div>
             <Dot />
