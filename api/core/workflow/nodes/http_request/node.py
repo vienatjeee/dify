@@ -1,4 +1,5 @@
 import logging
+import mimetypes
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -68,7 +69,10 @@ class HttpRequestNode(BaseNode[HttpRequestNodeData]):
             }
             executor_config["max_retries"] = 0
             http_executor = Executor(
-                **executor_config,
+                node_data=self.node_data,
+                timeout=self._get_request_timeout(self.node_data),
+                variable_pool=self.graph_runtime_state.variable_pool,
+                max_retries=0,
             )
             process_data["request"] = http_executor.to_log()
 
@@ -165,20 +169,24 @@ class HttpRequestNode(BaseNode[HttpRequestNodeData]):
 
     def extract_files(self, url: str, response: Response) -> list[File]:
         """
-        Extract files from response
+        Extract files from response by checking both Content-Type header and URL
         """
         files = []
         is_file = response.is_file
         content_type = response.content_type
         content = response.content
 
-        if is_file and content_type:
+        if is_file:
+            # Guess file extension from URL or Content-Type header
+            filename = url.split("?")[0].split("/")[-1] or ""
+            mime_type = content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
             tool_file = ToolFileManager.create_file_by_raw(
                 user_id=self.user_id,
                 tenant_id=self.tenant_id,
                 conversation_id=None,
                 file_binary=content,
-                mimetype=content_type,
+                mimetype=mime_type,
             )
 
             mapping = {

@@ -99,7 +99,6 @@ const config = {
         'chatbot-bg': 'var(--color-chatbot-bg)',
         'chat-bubble-bg': 'var(--color-chat-bubble-bg)',
         'workflow-process-bg': 'var(--color-workflow-process-bg)',
-        'mask-top2bottom-gray-50-to-transparent': 'var(--mask-top2bottom-gray-50-to-transparent)',
         'dataset-chunk-process-success-bg': 'var(--color-dataset-chunk-process-success-bg)',
         'dataset-chunk-process-error-bg': 'var(--color-dataset-chunk-process-error-bg)',
         'dataset-chunk-detail-card-hover-bg': 'var(--color-dataset-chunk-detail-card-hover-bg)',
@@ -110,7 +109,8 @@ const config = {
         'dataset-chunk-list-mask-bg': 'var(--color-dataset-chunk-list-mask-bg)',
       },
       lineClamp: {
-        20: '20',
+        '20': '20',
+        'mask-top2bottom-gray-50-to-transparent': 'var(--mask-top2bottom-gray-50-to-transparent)',
       },
     },
   },

@@ -58,12 +58,6 @@ type IDrawerContext = {
   appDetail?: App
 }
 
-type StatusShow = {
-  success: number
-  failed: number
-  partial_success: number
-}
-
 const DrawerContext = createContext<IDrawerContext>({} as IDrawerContext)
 
 /**
@@ -76,33 +70,6 @@ const HandThumbIconWithCount: FC<{ count: number; iconType: 'up' | 'down' }> = (
     <Icon className={'h-3 w-3 mr-0.5 rounded-md'} />
     {count > 0 ? count : null}
   </div>
-}
-
-const statusTdRender = (status: StatusShow) => {
-  if (status.partial_success + status.failed === 0) {
-    return (
-      <div className='inline-flex items-center gap-1 system-xs-semibold-uppercase'>
-        <Indicator color={'green'} />
-        <span className='text-util-colors-green-green-600'>Success</span>
-      </div>
-    )
-  }
-  else if (status.failed === 0) {
-    return (
-      <div className='inline-flex items-center gap-1 system-xs-semibold-uppercase'>
-        <Indicator color={'green'} />
-        <span className='text-util-colors-green-green-600'>Partial Success</span>
-      </div>
-    )
-  }
-  else {
-    return (
-      <div className='inline-flex items-center gap-1 system-xs-semibold-uppercase'>
-        <Indicator color={'red'} />
-        <span className='text-util-colors-red-red-600'>{status.failed} {`${status.failed > 1 ? 'Failures' : 'Failure'}`}</span>
-      </div>
-    )
-  }
 }
 
 const getFormattedChatList = (messages: ChatMessage[], conversationId: string, timezone: string, format: string) => {
