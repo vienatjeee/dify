@@ -302,7 +302,7 @@ class VerificationCodeManager:
 
         if stored_verification_code is None:
             return False
-        return stored_verification_code == verification_code
+        return stored_verification_code.decode('utf-8') == verification_code
 
     @classmethod
     def _set_verification_code(cls, code_type: str, account_id: str, verification_code: str, expire_minutes: int) -> None:
